@@ -121,16 +121,47 @@
       { label: 'Nodes', value: 7, color: D.css('--s4') }, { label: 'IRSA', value: 2, color: D.css('--s5') }, { label: 'Add-ons', value: 4, color: D.css('--s2') },
     ] });
 
-    // fleet grid (25 clusters)
+    // fleet grid — a diverse, realistic 25-cluster roster
     const fleet = document.getElementById('fleet'); const cells = [];
-    const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-south-1', 'ap-southeast-1'];
-    for (let i = 0; i < 25; i++) {
-      const util0 = 40 + Math.floor(Math.random() * 50); const bad = Math.random() < 0.08;
+    const REGIONS = ['us-east-1', 'us-west-2', 'eu-west-1', 'eu-central-1', 'ap-south-1', 'ap-southeast-1'];
+    const ENV = {
+      prod: { nodes: [10, 16], pf: 34, ver: '1.29' },
+      data: { nodes: [8, 12], pf: 26, ver: '1.28' },
+      ml:   { nodes: [4, 8], pf: 16, ver: '1.30' },
+      stg:  { nodes: [5, 8], pf: 30, ver: '1.29' },
+      dev:  { nodes: [2, 4], pf: 24, ver: '1.28' },
+    };
+    // labels give each cluster a purpose, not just a number
+    const spec = [
+      ['prod', 'api'], ['prod', 'web'], ['prod', 'checkout'], ['prod', 'search'], ['prod', 'edge'],
+      ['prod', 'stream'], ['prod', 'gateway'], ['prod', 'notify'], ['prod', 'media'], ['prod', 'core'],
+      ['data', 'warehouse'], ['data', 'kafka'], ['data', 'flink'],
+      ['ml', 'inference'], ['ml', 'training'], ['ml', 'features'],
+      ['stg', 'api'], ['stg', 'web'], ['stg', 'checkout'], ['stg', 'data'], ['stg', 'perf'],
+      ['dev', 'sandbox'], ['dev', 'preview'], ['dev', 'ci'], ['dev', 'scratch'],
+    ];
+    const scaling = new Set([5, 12, 20]);   // scaling now
+    const updating = new Set([14]);          // rolling upgrade
+    const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+    spec.forEach(([env, role], idx) => {
+      const i = idx + 1, cfg = ENV[env];
+      const nodes = ri(cfg.nodes[0], cfg.nodes[1]);
+      const pods = Math.round(nodes * cfg.pf + ri(0, 30));
+      const util = env === 'ml' ? ri(58, 92) : env === 'dev' ? ri(20, 45) : ri(42, 84);
+      const status = scaling.has(i) ? 'scaling' : updating.has(i) ? 'upgrading' : 'healthy';
+      const scls = status === 'healthy' ? 'ok' : 'warn';
+      const barCol = util > 82 ? 'var(--warn)' : 'var(--s3)';
       const el = document.createElement('div'); el.className = 'cnode';
-      el.innerHTML = `<div class="cid">eks-${String(i + 1).padStart(2, '0')}</div><div class="cst pill ${bad ? 'warn' : 'ok'}" style="display:inline-flex;margin-top:4px"><span class="d"></span>${bad ? 'scaling' : 'healthy'}</div><div class="bar"><i style="width:${util0}%;background:${util0 > 80 ? 'var(--warn)' : 'var(--s3)'}"></i></div>`;
-      el.title = regions[i % regions.length];
-      fleet.appendChild(el); cells.push(el.querySelector('.bar i'));
-    }
+      el.innerHTML =
+        `<div class="cn-head"><span class="cid">eks-${String(i).padStart(2, '0')}-${role}</span><span class="env ${env}">${env}</span></div>` +
+        `<div class="cn-meta">${REGIONS[idx % REGIONS.length]} <span class="dot">·</span> v${cfg.ver}</div>` +
+        `<div class="cn-meta">${nodes} nodes <span class="dot">·</span> ${pods} pods</div>` +
+        `<div class="bar"><i style="width:${util}%;background:${barCol}"></i></div>` +
+        `<div class="cn-foot"><span class="cn-util">CPU ${util}%</span><span class="cn-status ${scls}"><span class="d"></span>${status}</span></div>`;
+      fleet.appendChild(el);
+      cells.push({ bar: el.querySelector('.bar i'), util: el.querySelector('.cn-util') });
+    });
 
     // table
     const rows = [
@@ -177,7 +208,7 @@
       pods = Math.round(D.drift(pods, 120, 6100, 6800)); document.getElementById('m-pods').textContent = pods.toLocaleString();
       if (Math.random() < 0.3) { hpa = D.clamp(hpa + (Math.random()<0.5?1:-1), 4, 22); document.getElementById('m-hpa').textContent = hpa; }
       nodes = D.clamp(nodes + (Math.random()<0.5?1:-1), 176, 196); document.getElementById('t-nodes').textContent = nodes;
-      cells.forEach((b) => { if (Math.random() < 0.25) { const w = D.clamp(parseFloat(b.style.width) + (Math.random()-0.5)*14, 25, 96); b.style.width = w + '%'; b.style.background = w > 80 ? 'var(--warn)' : 'var(--s3)'; } });
+      cells.forEach((c) => { if (Math.random() < 0.25) { const w = Math.round(D.clamp(parseFloat(c.bar.style.width) + (Math.random()-0.5)*14, 20, 96)); c.bar.style.width = w + '%'; c.bar.style.background = w > 82 ? 'var(--warn)' : 'var(--s3)'; c.util.textContent = 'CPU ' + w + '%'; } });
       pushLog();
     });
   })();
