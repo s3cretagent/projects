@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cost Optimization Dashboard — Shubh Malhotra</title>
+  <meta name="description" content="Multi-account AWS cost observability & automated rightsizing — live demo dashboard." />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="../dashboard.css" />
+  <script>(function(){document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light');}catch(e){}})();</script>
+</head>
+<body>
+  <nav class="dash-nav">
+    <div class="wrap">
+      <a class="back-link" href="https://s3cretagent.github.io/portfolio/#projects">← All projects</a>
+      <div class="right">
+        <a class="btn btn-ghost" href="https://s3cretagent.github.io/portfolio/">Portfolio</a>
+        <button id="themeToggle" aria-label="Toggle theme">🌓</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="dash-hero wrap">
+    <p class="crumb">FinOps · Observability</p>
+    <h1>Cost Optimization Dashboard</h1>
+    <p class="lede">Multi-account AWS cost observability visualising spend per service, team and environment in real time — with automated instance right-sizing that cut monthly cloud costs by ~25%.</p>
+    <div class="stack-pills"><span>Grafana</span><span>AWS CloudWatch</span><span>Cost Explorer API</span><span>Python / Boto3</span><span>Slack</span></div>
+  </header>
+
+  <section class="wrap">
+    <div class="tiles">
+      <div class="tile reveal"><div class="k grad" id="t-spend">$0</div><div class="lbl">Month-to-date spend</div><div class="delta down" id="t-spend-d">▼ 24.8% vs last month</div></div>
+      <div class="tile reveal"><div class="k" id="t-save">$0</div><div class="lbl">Savings this month</div><div class="delta up">▲ automated rightsizing</div></div>
+      <div class="tile reveal"><div class="k" id="t-recs">0</div><div class="lbl">Open rightsizing actions</div><div class="delta up" id="t-recs-d">live</div></div>
+      <div class="tile reveal"><div class="k" id="t-burn">$0</div><div class="lbl">Current burn rate / hr</div><div class="delta" id="t-burn-d">live</div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>Live cost telemetry</h2><span class="live"><span class="pip"></span>Live</span><span class="line"></span></div>
+    <div class="grid g-3">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Daily spend vs budget</h3><span class="sub">last 30 days</span></div>
+        <div id="c-trend"></div>
+        <div class="legend"><span><i style="background:var(--s1)"></i>Actual spend</span><span><i style="background:var(--s2)"></i>Budget</span></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Spend by service</h3><span class="sub">MTD</span></div>
+        <div id="c-donut"></div>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="grid g-2" style="margin-top:16px">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Cost by environment</h3><span class="sub">monthly</span></div>
+        <div id="c-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Live signals</h3><span class="live"><span class="pip"></span>streaming</span></div>
+        <div class="metrics" style="margin-top:6px">
+          <div class="metric"><div class="mv" id="m-hr">$0</div><div class="ml">Blended $/hour</div></div>
+          <div class="metric"><div class="mv" id="m-anom">0</div><div class="ml">Anomalies (24h)</div></div>
+          <div class="metric"><div class="mv" id="m-cov">0%</div><div class="ml">Savings-plan coverage</div></div>
+        </div>
+        <p class="panel-note">Anomaly detection compares each service against its 14-day rolling baseline and pages FinOps on &gt;3σ deviations.</p>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="margin-top:16px">
+      <div class="panel-head"><h3>Top rightsizing recommendations</h3><span class="sub">auto-generated · sorted by monthly saving</span></div>
+      <div class="tbl-wrap">
+        <table class="data">
+          <thead><tr><th>Resource</th><th>Service</th><th>Current</th><th>Recommended</th><th>Monthly saving</th><th>Confidence</th></tr></thead>
+          <tbody id="rec-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>How it works</h2><span class="line"></span></div>
+    <div class="panel reveal">
+      <div class="flow">
+        <div class="node"><div class="ico">📊</div><div class="nt">CloudWatch + Cost Explorer</div><div class="nd">Per-account metrics & billing pulled via API</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🐍</div><div class="nt">Boto3 collector</div><div class="nd">Scheduled Python jobs normalise & tag spend</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">⚙️</div><div class="nt">Rightsizing engine</div><div class="nd">Utilisation vs capacity → sizing actions</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">📈</div><div class="nt">Grafana</div><div class="nd">Team-facing dashboards & drilldowns</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🔔</div><div class="nt">Slack alerts</div><div class="nd">Anomalies & budget breaches routed to owners</div></div>
+      </div>
+    </div>
+    <p style="margin-top:16px"><span class="demo-note">◆ Live demo — figures are simulated client-side telemetry that mirrors the production dashboard's shape and behaviour.</span></p>
+  </section>
+
+  <footer class="foot">© <span id="year"></span> Shubh Malhotra · <a href="https://s3cretagent.github.io/portfolio/" style="color:var(--accent)">back to portfolio</a></footer>
+
+  <script src="../dashboard.js"></script>
+  <script>
+  (function () {
+    const D = window.Dash; if (!D) return;
+    // ---- daily spend trend (30d) ----
+    const days = 30, labels = [], actual = [], budget = [];
+    for (let i = 0; i < days; i++) {
+      labels.push('D' + (i + 1));
+      const base = 6050 + Math.sin(i / 3) * 320 - i * 22; // slight downward trend from optimisation
+      actual.push(Math.round(base + (Math.random() - 0.5) * 260));
+      budget.push(6200);
+    }
+    const trend = D.lineChart(document.getElementById('c-trend'), {
+      labels, area: true, yfmt: D.fmt.usd,
+      series: [ { name: 'Actual spend', color: D.css('--s1'), data: actual }, { name: 'Budget', color: D.css('--s2'), data: budget } ],
+    });
+
+    // ---- donut: spend by service ----
+    const svc = [
+      { label: 'EC2 / EKS', value: 71200, color: D.css('--s1') },
+      { label: 'RDS', value: 38400, color: D.css('--s2') },
+      { label: 'S3', value: 18900, color: D.css('--s3') },
+      { label: 'Data transfer', value: 15600, color: D.css('--s4') },
+      { label: 'Other', value: 12300, color: D.css('--s5') },
+    ];
+    const svcTotal = svc.reduce((a, s) => a + s.value, 0);
+    D.donut(document.getElementById('c-donut'), svc, { v: '$' + (svcTotal / 1000).toFixed(0) + 'K', l: 'MTD total' });
+    document.getElementById('donut-legend').innerHTML = svc.map((s) => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('');
+
+    // ---- bars: cost by environment ----
+    D.barChart(document.getElementById('c-bars'), { yfmt: D.fmt.usd, data: [
+      { label: 'prod', value: 118000, color: D.css('--s1') }, { label: 'staging', value: 28000, color: D.css('--s3') },
+      { label: 'dev', value: 19000, color: D.css('--s4') }, { label: 'data', value: 37000, color: D.css('--s5') },
+    ] });
+
+    // ---- recommendations table ----
+    const recs = [
+      ['i-0a91… api-gw', 'EC2', 'm5.2xlarge', 'm5.xlarge', 2140, 'ok', 'High'],
+      ['rds-orders-primary', 'RDS', 'db.r6g.2xlarge', 'db.r6g.xlarge', 1880, 'ok', 'High'],
+      ['eks-ng-batch', 'EKS node', '6× c5.4xlarge', '4× c5.4xlarge', 1610, 'warn', 'Medium'],
+      ['i-0c42… worker', 'EC2', 'c5.4xlarge', 'c5.2xlarge', 940, 'ok', 'High'],
+      ['ebs gp2 · 4.2TB', 'EBS', 'gp2', 'gp3', 610, 'ok', 'High'],
+      ['nat-gw idle', 'VPC', '3× NAT', '1× NAT', 420, 'warn', 'Medium'],
+    ];
+    document.getElementById('rec-body').innerHTML = recs.map((r) =>
+      `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td style="color:var(--accent)">${r[3]}</td><td>$${r[4].toLocaleString()}/mo</td><td><span class="pill ${r[5]}"><span class="d"></span>${r[6]}</span></td></tr>`).join('');
+
+    // ---- hero tiles + live ----
+    D.countUp(document.getElementById('t-spend'), 182300, 1500, D.fmt.usd);
+    D.countUp(document.getElementById('t-save'), 46800, 1500, D.fmt.usd);
+    document.getElementById('t-recs').textContent = recs.length + 8;
+    let burn = 251, hr = 251, anom = 3, cov = 78, mtd = 182300;
+    D.every(2200, () => {
+      burn = D.drift(burn, 12, 228, 274); document.getElementById('t-burn').textContent = '$' + burn.toFixed(0);
+      document.getElementById('m-hr').textContent = '$' + burn.toFixed(0);
+      hr = burn; if (Math.random() < 0.18) anom = D.clamp(anom + (Math.random() < 0.5 ? 1 : -1), 0, 9);
+      document.getElementById('m-anom').textContent = anom;
+      cov = D.drift(cov, 1.2, 74, 83); document.getElementById('m-cov').textContent = cov.toFixed(0) + '%';
+      mtd += burn * 0.6; document.getElementById('t-spend').textContent = D.fmt.usd(mtd);
+      // push a new trend point occasionally
+      const s = trend.state; s.actual;
+      const a = s.series[0].data; a.push(D.clamp(a[a.length - 1] + (Math.random() - 0.5) * 260, 5200, 6400)); a.shift();
+      s.labels.push('•'); s.labels.shift(); trend.update({});
+    });
+    document.getElementById('t-burn-d').textContent = 'streaming';
+  })();
+  </script>
+</body>
+</html>
