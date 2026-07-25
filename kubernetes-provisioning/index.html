@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kubernetes Cluster Provisioning — Shubh Malhotra</title>
+  <meta name="description" content="Terraform-provisioned EKS fleet — 25 clusters with IAM/IRSA, Helm chart library & GitOps. Live demo dashboard." />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="../dashboard.css" />
+  <script>(function(){document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light');}catch(e){}})();</script>
+</head>
+<body>
+  <nav class="dash-nav">
+    <div class="wrap">
+      <a class="back-link" href="https://s3cretagent.github.io/portfolio/#projects">← All projects</a>
+      <div class="right"><a class="btn btn-ghost" href="https://s3cretagent.github.io/portfolio/">Portfolio</a><button id="themeToggle" aria-label="Toggle theme">🌓</button></div>
+    </div>
+  </nav>
+
+  <header class="dash-hero wrap">
+    <p class="crumb">Platform · Infrastructure as Code</p>
+    <h1>Kubernetes Cluster Provisioning</h1>
+    <p class="lede">Reusable Terraform modules (VPC, EKS, node groups, IAM/IRSA, add-ons) that provision 25 EKS clusters with remote S3 state and DynamoDB locking — plus a shared Helm chart library that onboards a new service in under 30 minutes.</p>
+    <div class="stack-pills"><span>Terraform</span><span>Amazon EKS</span><span>Helm</span><span>IAM / IRSA</span><span>ArgoCD</span></div>
+  </header>
+
+  <section class="wrap">
+    <div class="tiles">
+      <div class="tile reveal"><div class="k grad" id="t-clusters">0</div><div class="lbl">EKS clusters (IaC)</div><div class="delta up">multi-region</div></div>
+      <div class="tile reveal"><div class="k" id="t-onboard">0</div><div class="lbl">Service onboarding</div><div class="delta up">▲ from 2+ days</div></div>
+      <div class="tile reveal"><div class="k" id="t-uptime">0%</div><div class="lbl">Fleet uptime SLA</div><div class="delta up">30-day</div></div>
+      <div class="tile reveal"><div class="k" id="t-nodes">0</div><div class="lbl">Managed nodes</div><div class="delta" id="t-nodes-d">live · autoscaling</div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>Live fleet telemetry</h2><span class="live"><span class="pip"></span>Live</span><span class="line"></span></div>
+
+    <div class="grid g-3">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Fleet utilization</h3><span class="sub">weighted across 25 clusters</span></div>
+        <div id="c-util"></div>
+        <div class="legend"><span><i style="background:var(--s1)"></i>CPU %</span><span><i style="background:var(--s5)"></i>Memory %</span></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Capacity now</h3><span class="live"><span class="pip"></span>live</span></div>
+        <div style="display:flex;gap:8px;margin-top:6px"><div id="g-cpu" style="flex:1"></div><div id="g-mem" style="flex:1"></div></div>
+        <div class="metrics" style="grid-template-columns:1fr 1fr;margin-top:10px">
+          <div class="metric"><div class="mv" id="m-pods">0</div><div class="ml">Running pods</div></div>
+          <div class="metric"><div class="mv" id="m-hpa">0</div><div class="ml">HPA scale events / hr</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="margin-top:16px">
+      <div class="panel-head"><h3>Cluster fleet</h3><span class="sub">25 clusters · node-group utilisation</span></div>
+      <div class="cluster-grid" id="fleet"></div>
+    </div>
+
+    <div class="grid g-2" style="margin-top:16px">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Terraform apply time</h3><span class="sub">minutes · by module</span></div>
+        <div id="c-tf"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Provisioning log</h3><span class="live"><span class="pip"></span>argocd</span></div>
+        <div class="logs" id="logs"></div>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="margin-top:16px">
+      <div class="panel-head"><h3>Cluster inventory</h3><span class="sub">representative sample</span></div>
+      <div class="tbl-wrap">
+        <table class="data">
+          <thead><tr><th>Cluster</th><th>Region</th><th>Nodes</th><th>Pods</th><th>Version</th><th>Status</th></tr></thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>Provisioning pipeline</h2><span class="line"></span></div>
+    <div class="panel reveal">
+      <div class="flow">
+        <div class="node"><div class="ico">🧬</div><div class="nt">Git (modules)</div><div class="nd">Versioned Terraform, PR-reviewed</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🏗️</div><div class="nt">Terraform</div><div class="nd">VPC · EKS · IAM/IRSA · add-ons · S3+DDB state</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">☸️</div><div class="nt">25× EKS</div><div class="nd">Per-env workspaces, multi-AZ</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">📦</div><div class="nt">Helm library</div><div class="nd">Deploy · HPA · PDB · ExternalSecrets</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🚀</div><div class="nt">ArgoCD</div><div class="nd">GitOps sync & auto-rollback</div></div>
+      </div>
+    </div>
+    <p style="margin-top:16px"><span class="demo-note">◆ Live demo — figures are simulated client-side telemetry that mirrors the production fleet's shape and behaviour.</span></p>
+  </section>
+
+  <footer class="foot">© <span id="year"></span> Shubh Malhotra · <a href="https://s3cretagent.github.io/portfolio/" style="color:var(--accent)">back to portfolio</a></footer>
+
+  <script src="../dashboard.js"></script>
+  <script>
+  (function () {
+    const D = window.Dash; if (!D) return;
+
+    // utilization line
+    const N = 44, labels = [], cpu = [], mem = [];
+    for (let i = 0; i < N; i++) { labels.push(''); cpu.push(Math.round(58 + Math.sin(i / 5) * 12 + Math.random() * 6)); mem.push(Math.round(64 + Math.cos(i / 6) * 9 + Math.random() * 5)); }
+    const util = D.lineChart(document.getElementById('c-util'), { labels, min: 0, max: 100, yfmt: (n) => n.toFixed(0) + '%',
+      series: [ { name: 'CPU %', color: D.css('--s1'), data: cpu }, { name: 'Memory %', color: D.css('--s5'), data: mem } ] });
+
+    // gauges
+    const gCpu = D.gauge(document.getElementById('g-cpu'), 62, 100, D.css('--s1'), 'CPU');
+    const gMem = D.gauge(document.getElementById('g-mem'), 68, 100, D.css('--s5'), 'Memory');
+
+    // terraform apply bar
+    D.barChart(document.getElementById('c-tf'), { yfmt: (n) => n + 'm', data: [
+      { label: 'VPC', value: 3, color: D.css('--s3') }, { label: 'EKS', value: 11, color: D.css('--s1') },
+      { label: 'Nodes', value: 7, color: D.css('--s4') }, { label: 'IRSA', value: 2, color: D.css('--s5') }, { label: 'Add-ons', value: 4, color: D.css('--s2') },
+    ] });
+
+    // fleet grid (25 clusters)
+    const fleet = document.getElementById('fleet'); const cells = [];
+    const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-south-1', 'ap-southeast-1'];
+    for (let i = 0; i < 25; i++) {
+      const util0 = 40 + Math.floor(Math.random() * 50); const bad = Math.random() < 0.08;
+      const el = document.createElement('div'); el.className = 'cnode';
+      el.innerHTML = `<div class="cid">eks-${String(i + 1).padStart(2, '0')}</div><div class="cst pill ${bad ? 'warn' : 'ok'}" style="display:inline-flex;margin-top:4px"><span class="d"></span>${bad ? 'scaling' : 'healthy'}</div><div class="bar"><i style="width:${util0}%;background:${util0 > 80 ? 'var(--warn)' : 'var(--s3)'}"></i></div>`;
+      el.title = regions[i % regions.length];
+      fleet.appendChild(el); cells.push(el.querySelector('.bar i'));
+    }
+
+    // table
+    const rows = [
+      ['eks-01-prod', 'us-east-1', 14, 486, '1.29', 'ok', 'Healthy'],
+      ['eks-07-prod', 'eu-west-1', 11, 402, '1.29', 'ok', 'Healthy'],
+      ['eks-12-data', 'us-west-2', 9, 271, '1.28', 'warn', 'Scaling'],
+      ['eks-18-stg', 'ap-south-1', 6, 158, '1.29', 'ok', 'Healthy'],
+      ['eks-23-dev', 'ap-southeast-1', 4, 96, '1.28', 'ok', 'Healthy'],
+    ];
+    document.getElementById('tbl-body').innerHTML = rows.map((r) =>
+      `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>v${r[4]}</td><td><span class="pill ${r[5]}"><span class="d"></span>${r[6]}</span></td></tr>`).join('');
+
+    // hero
+    D.countUp(document.getElementById('t-clusters'), 25, 1200, (n) => Math.round(n).toString());
+    document.getElementById('t-onboard').textContent = '<30 min';
+    D.countUp(document.getElementById('t-uptime'), 99.95, 1400, (n) => n.toFixed(2) + '%');
+    D.countUp(document.getElementById('t-nodes'), 184, 1400, (n) => Math.round(n).toString());
+
+    // logs
+    const logsEl = document.getElementById('logs'); const lines = [];
+    const samples = [
+      ['ok', 'terraform', 'apply complete · eks-14-stg · 8m 42s'],
+      ['info', 'argocd', 'sync app-of-apps · 62 resources healthy'],
+      ['info', 'hpa', 'orders-api scaled 6→9 replicas (cpu 78%)'],
+      ['ok', 'helm', 'chart library v2.4.1 rolled to 25 clusters'],
+      ['info', 'cluster-autoscaler', 'added node group ng-batch +2'],
+      ['warn', 'argocd', 'auto-rollback: payments v1.8.2 failed health gate'],
+      ['ok', 'irsa', 'service account bound · s3-reader'],
+    ];
+    function pushLog() { const s = samples[Math.floor(Math.random() * samples.length)]; const t = new Date();
+      const ts = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
+      lines.unshift(`<div class="ln"><span class="t">${ts}</span><span class="lv ${s[0]}">${s[1]}</span><span>${s[2]}</span></div>`); if (lines.length > 8) lines.pop(); logsEl.innerHTML = lines.join(''); }
+    for (let i = 0; i < 6; i++) pushLog();
+
+    // live
+    let pods = 6420, hpa = 12, nodes = 184;
+    document.getElementById('m-pods').textContent = pods.toLocaleString();
+    document.getElementById('m-hpa').textContent = hpa;
+    D.every(2000, () => {
+      const c = D.drift(62, 10, 48, 82), m = D.drift(68, 8, 54, 84);
+      gCpu.set(c); gMem.set(m);
+      cpu.push(D.clamp(cpu[cpu.length-1] + (Math.random()-0.5)*8, 40, 92)); cpu.shift();
+      mem.push(D.clamp(mem[mem.length-1] + (Math.random()-0.5)*6, 48, 88)); mem.shift(); util.update({});
+      pods = Math.round(D.drift(pods, 120, 6100, 6800)); document.getElementById('m-pods').textContent = pods.toLocaleString();
+      if (Math.random() < 0.3) { hpa = D.clamp(hpa + (Math.random()<0.5?1:-1), 4, 22); document.getElementById('m-hpa').textContent = hpa; }
+      nodes = D.clamp(nodes + (Math.random()<0.5?1:-1), 176, 196); document.getElementById('t-nodes').textContent = nodes;
+      cells.forEach((b) => { if (Math.random() < 0.25) { const w = D.clamp(parseFloat(b.style.width) + (Math.random()-0.5)*14, 25, 96); b.style.width = w + '%'; b.style.background = w > 80 ? 'var(--warn)' : 'var(--s3)'; } });
+      pushLog();
+    });
+  })();
+  </script>
+</body>
+</html>

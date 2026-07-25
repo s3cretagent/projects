@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Database Migration Automation — Shubh Malhotra</title>
+  <meta name="description" content="Zero-downtime database migration framework: DMS full-load + CDC with Debezium & Kafka — live demo dashboard." />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="../dashboard.css" />
+  <script>(function(){document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light');}catch(e){}})();</script>
+</head>
+<body>
+  <nav class="dash-nav">
+    <div class="wrap">
+      <a class="back-link" href="https://s3cretagent.github.io/portfolio/#projects">← All projects</a>
+      <div class="right"><a class="btn btn-ghost" href="https://s3cretagent.github.io/portfolio/">Portfolio</a><button id="themeToggle" aria-label="Toggle theme">🌓</button></div>
+    </div>
+  </nav>
+
+  <header class="dash-hero wrap">
+    <p class="crumb">Data platform · Zero-downtime</p>
+    <h1>Database Migration Automation</h1>
+    <p class="lede">A fully automated framework for zero-downtime migrations — provisions RDS via Boto3, replicates schemas &amp; indexes, and runs AWS DMS full-load + CDC with Debezium connectors streaming changes into Kafka for downstream consumers.</p>
+    <div class="stack-pills"><span>Python</span><span>Boto3</span><span>AWS DMS</span><span>Debezium</span><span>Kafka</span><span>PostgreSQL</span></div>
+  </header>
+
+  <section class="wrap">
+    <div class="tiles">
+      <div class="tile reveal"><div class="k grad" id="t-rows">0</div><div class="lbl">Rows replicated</div><div class="delta up" id="t-rows-d">live</div></div>
+      <div class="tile reveal"><div class="k" id="t-lag">0ms</div><div class="lbl">CDC replication lag</div><div class="delta up">sub-second</div></div>
+      <div class="tile reveal"><div class="k" id="t-tables">0</div><div class="lbl">Tables in sync</div><div class="delta up">of 148</div></div>
+      <div class="tile reveal"><div class="k" id="t-down">0s</div><div class="lbl">Cutover downtime</div><div class="delta up">▲ zero-downtime</div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>Live replication telemetry</h2><span class="live"><span class="pip"></span>Live</span><span class="line"></span></div>
+    <div class="grid g-3">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Replication throughput</h3><span class="sub">rows / second</span></div>
+        <div id="c-thru"></div>
+        <div class="legend"><span><i style="background:var(--s1)"></i>Full-load</span><span><i style="background:var(--s3)"></i>CDC stream</span></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Migration progress</h3><span class="sub">148 tables</span></div>
+        <div id="c-donut"></div>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="grid g-2" style="margin-top:16px">
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Live signals</h3><span class="live"><span class="pip"></span>streaming</span></div>
+        <div class="metrics" style="margin-top:6px">
+          <div class="metric"><div class="mv" id="m-thru">0</div><div class="ml">Rows / sec (blended)</div></div>
+          <div class="metric"><div class="mv" id="m-lag">0ms</div><div class="ml">Debezium lag</div></div>
+          <div class="metric"><div class="mv" id="m-err">0</div><div class="ml">DLQ errors</div></div>
+        </div>
+        <div class="panel-head" style="margin-top:18px"><h3 style="font-size:.95rem">Kafka topic lag</h3></div>
+        <div id="c-lag"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head"><h3>Connector log stream</h3><span class="live"><span class="pip"></span>tail -f</span></div>
+        <div class="logs" id="logs"></div>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="margin-top:16px">
+      <div class="panel-head"><h3>Table replication status</h3><span class="sub">largest tables</span></div>
+      <div class="tbl-wrap">
+        <table class="data">
+          <thead><tr><th>Table</th><th>Rows</th><th>Phase</th><th>Lag</th><th>Status</th></tr></thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-h"><h2>Pipeline</h2><span class="line"></span></div>
+    <div class="panel reveal">
+      <div class="flow">
+        <div class="node"><div class="ico">🗄️</div><div class="nt">Source RDS (Postgres)</div><div class="nd">Live OLTP primary</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">📦</div><div class="nt">DMS full-load</div><div class="nd">Bulk copy + schema/index replication</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🔄</div><div class="nt">Debezium CDC</div><div class="nd">WAL change events, exactly-once</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🚇</div><div class="nt">Kafka</div><div class="nd">Durable topic per table</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="ico">🎯</div><div class="nt">Target RDS + consumers</div><div class="nd">Cutover on lag = 0</div></div>
+      </div>
+    </div>
+    <p style="margin-top:16px"><span class="demo-note">◆ Live demo — figures are simulated client-side telemetry that mirrors the production pipeline's shape and behaviour.</span></p>
+  </section>
+
+  <footer class="foot">© <span id="year"></span> Shubh Malhotra · <a href="https://s3cretagent.github.io/portfolio/" style="color:var(--accent)">back to portfolio</a></footer>
+
+  <script src="../dashboard.js"></script>
+  <script>
+  (function () {
+    const D = window.Dash; if (!D) return;
+    const rps = (n) => D.fmt.k(n) + '/s';
+
+    // throughput line (60 pts)
+    const N = 60, labels = [], full = [], cdc = [];
+    for (let i = 0; i < N; i++) { labels.push(''); full.push(Math.round(42000 * Math.exp(-i / 40) + 3000 + Math.random() * 1500)); cdc.push(Math.round(5200 + Math.sin(i / 5) * 900 + Math.random() * 600)); }
+    const thru = D.lineChart(document.getElementById('c-thru'), { labels, area: true, yfmt: rps,
+      series: [ { name: 'Full-load', color: D.css('--s1'), data: full }, { name: 'CDC stream', color: D.css('--s3'), data: cdc } ] });
+
+    // donut progress
+    const seg = [ { label: 'Completed', value: 121, color: D.css('--s3') }, { label: 'Replicating', value: 19, color: D.css('--s1') }, { label: 'Queued', value: 8, color: D.css('--s4') } ];
+    D.donut(document.getElementById('c-donut'), seg, { v: '82%', l: 'synced' });
+    document.getElementById('donut-legend').innerHTML = seg.map((s) => `<span><i style="background:${s.color}"></i>${s.label} · ${s.value}</span>`).join('');
+
+    // kafka topic lag mini-line
+    const lagLabels = [], lagData = [];
+    for (let i = 0; i < 40; i++) { lagLabels.push(''); lagData.push(Math.round(120 + Math.sin(i / 4) * 60 + Math.random() * 40)); }
+    const lagChart = D.lineChart(document.getElementById('c-lag'), { labels: lagLabels, yfmt: (n)=>n.toFixed(0), min: 0,
+      series: [ { name: 'Lag (ms)', color: D.css('--s4'), data: lagData } ] });
+
+    // table
+    const rows = [
+      ['orders', '84.2M', 'CDC', '210ms', 'ok', 'Streaming'],
+      ['order_items', '312.5M', 'CDC', '340ms', 'ok', 'Streaming'],
+      ['payments', '41.8M', 'CDC', '180ms', 'ok', 'Streaming'],
+      ['users', '18.9M', 'Full-load', '—', 'warn', '92% copied'],
+      ['inventory_ledger', '128.0M', 'Queued', '—', 'warn', 'Pending'],
+      ['audit_log', '540.1M', 'CDC', '520ms', 'ok', 'Streaming'],
+    ];
+    document.getElementById('tbl-body').innerHTML = rows.map((r) =>
+      `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="pill ${r[4]}"><span class="d"></span>${r[5]}</span></td></tr>`).join('');
+
+    // hero + live
+    let rowsTot = 1128000000, lag = 210, err = 0, thruNow = 8200, tables = 140;
+    D.countUp(document.getElementById('t-rows'), rowsTot, 1600, (n)=>D.fmt.big(n));
+    document.getElementById('t-lag').textContent = '210ms';
+    D.countUp(document.getElementById('t-tables'), 140, 1400, (n)=>Math.round(n).toString());
+    document.getElementById('t-down').textContent = '0s';
+
+    const logsEl = document.getElementById('logs'); const lines = [];
+    const logSamples = [
+      ['ok', 'debezium', 'snapshot completed for public.orders (84.2M rows)'],
+      ['info', 'dms', 'CDC applied 12,840 events · lag 0.21s'],
+      ['info', 'kafka', 'topic cdc.public.payments · offset committed'],
+      ['ok', 'debezium', 'streaming resumed from LSN 0/3F2A118'],
+      ['info', 'dms', 'full-load 92% · public.users'],
+      ['warn', 'dlq', 'schema drift auto-reconciled on public.inventory_ledger'],
+      ['info', 'kafka', 'consumer group sync-1 rebalanced · 3 partitions'],
+    ];
+    function pushLog() {
+      const s = logSamples[Math.floor(Math.random() * logSamples.length)];
+      const t = new Date(); const ts = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
+      lines.unshift(`<div class="ln"><span class="t">${ts}</span><span class="lv ${s[0]}">${s[1]}</span><span>${s[2]}</span></div>`);
+      if (lines.length > 8) lines.pop(); logsEl.innerHTML = lines.join('');
+    }
+    for (let i = 0; i < 6; i++) pushLog();
+
+    D.every(1800, () => {
+      thruNow = D.drift(thruNow, 900, 4200, 12000); document.getElementById('m-thru').textContent = rps(thruNow);
+      lag = D.drift(lag, 60, 90, 620); document.getElementById('m-lag').textContent = lag.toFixed(0) + 'ms'; document.getElementById('t-lag').textContent = lag.toFixed(0) + 'ms';
+      if (Math.random() < 0.12) err = D.clamp(err + 1, 0, 4); document.getElementById('m-err').textContent = err;
+      rowsTot += thruNow * 1.8; document.getElementById('t-rows').textContent = D.fmt.big(rowsTot);
+      const a = thru.state.series[1].data; a.push(D.clamp(a[a.length-1] + (Math.random()-0.5)*900, 3800, 7200)); a.shift(); thru.update({});
+      const l = lagData; l.push(D.clamp(l[l.length-1] + (Math.random()-0.5)*60, 60, 320)); l.shift(); lagChart.update({});
+      pushLog();
+    });
+  })();
+  </script>
+</body>
+</html>
