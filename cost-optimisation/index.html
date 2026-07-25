@@ -116,22 +116,22 @@
       series: [ { name: 'Actual spend', color: D.css('--s1'), data: actual }, { name: 'Budget', color: D.css('--s2'), data: budget } ],
     });
 
-    // ---- donut: spend by service ----
+    // ---- donut: spend by service (sums to MTD ~$182K) ----
     const svc = [
-      { label: 'EC2 / EKS', value: 71200, color: D.css('--s1') },
-      { label: 'RDS', value: 38400, color: D.css('--s2') },
-      { label: 'S3', value: 18900, color: D.css('--s3') },
-      { label: 'Data transfer', value: 15600, color: D.css('--s4') },
-      { label: 'Other', value: 12300, color: D.css('--s5') },
+      { label: 'EC2 / EKS', value: 82400, color: D.css('--s1') },
+      { label: 'RDS', value: 41300, color: D.css('--s2') },
+      { label: 'S3', value: 20900, color: D.css('--s3') },
+      { label: 'Data transfer', value: 16200, color: D.css('--s4') },
+      { label: 'Other', value: 21500, color: D.css('--s5') },
     ];
-    const svcTotal = svc.reduce((a, s) => a + s.value, 0);
+    const svcTotal = svc.reduce((a, s) => a + s.value, 0); // 182,300
     D.donut(document.getElementById('c-donut'), svc, { v: '$' + (svcTotal / 1000).toFixed(0) + 'K', l: 'MTD total' });
     document.getElementById('donut-legend').innerHTML = svc.map((s) => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join('');
 
-    // ---- bars: cost by environment ----
+    // ---- bars: cost by environment (also sums to MTD ~$182K) ----
     D.barChart(document.getElementById('c-bars'), { yfmt: D.fmt.usd, data: [
-      { label: 'prod', value: 118000, color: D.css('--s1') }, { label: 'staging', value: 28000, color: D.css('--s3') },
-      { label: 'dev', value: 19000, color: D.css('--s4') }, { label: 'data', value: 37000, color: D.css('--s5') },
+      { label: 'prod', value: 121300, color: D.css('--s1') }, { label: 'staging', value: 24000, color: D.css('--s3') },
+      { label: 'dev', value: 12000, color: D.css('--s4') }, { label: 'data', value: 25000, color: D.css('--s5') },
     ] });
 
     // ---- recommendations table ----
